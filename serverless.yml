@@ -1,0 +1,92 @@
+service: image-recognition
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: python3.8
+
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action: [
+                    'dynamodb:*',
+                    'rekognition:*',
+                    's3:*'
+          ]
+          Resource: '*'
+
+  environment:
+    TABLE_NAME: ${self:service}-blobs
+    BUCKET_NAME: ${self:service}-blobs-bucket
+    PROJECT_NAME: ${self:service}-blobs-project
+
+functions:
+
+  createBlob:
+    handler: src.createBlob.handler
+    events:
+      - http:
+          path: blobs
+          method: post
+          integration: lambda
+          cors: true
+
+  getBlob:
+    handler: src.getBlob.handler
+    events:
+      - http:
+          path: blobs/{blob_id}
+          method: get
+          integration: lambda
+          cors: true
+
+  processBlob:
+    handler: src.processBlob.handler
+    events:
+      - s3:
+          bucket: ${self:provider.environment.BUCKET_NAME}
+          event: s3:ObjectCreated:*
+          existing: true
+
+  makeCallback:
+    handler: src.makeCallback.handler
+    events:
+      - stream:
+          type: dynamodb
+          arn:
+            Fn::GetAtt: [blobs, StreamArn]
+          filterPatterns:
+            - eventName: [MODIFY]
+
+resources:
+  Resources:
+
+    blobs:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES
+        TableName: ${self:provider.environment.TABLE_NAME}
+        AttributeDefinitions:
+          - AttributeName: blob_id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: blob_id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+
+    rekognition:
+      Type: AWS::Rekognition::Project
+      Properties:
+        ProjectName: ${self:provider.environment.PROJECT_NAME}
+
+    blobsBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:provider.environment.BUCKET_NAME}
+        VersioningConfiguration:
+          Status: Enabled
