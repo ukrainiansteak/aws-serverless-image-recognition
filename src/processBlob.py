@@ -41,8 +41,6 @@ def handler(event, context):
         TableName=TABLE_NAME,
         Item=item)
 
-    return json.dumps(
-        {
-            "statusCode": 201,
-        }
-    )
+    return {
+            "statusCode": 200,
+    }
