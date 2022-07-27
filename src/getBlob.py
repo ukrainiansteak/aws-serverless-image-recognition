@@ -27,7 +27,6 @@ def handler(event, context):
         response_labels = []
         for label in labels:
             response_labels.append(json.loads(label))
-        print(response_labels)
     except AttributeError:
         return {
             "statusCode": 404,
