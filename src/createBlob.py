@@ -15,6 +15,7 @@ BUCKET_NAME = os.environ["BUCKET_NAME"]
 def handler(event, context):
 
     event_body = event['body']
+
     if not event_body:
         return {
             "statusCode": 400, "body": json.dumps({
@@ -22,11 +23,12 @@ def handler(event, context):
             })
         }
 
-    callback_url = event_body.get("callback_url")
+    callback_url = json.loads(event_body)["callback_url"]
     pattern = r'[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b'
     if not callback_url or not re.search(pattern, callback_url):
         return {
-            "statusCode": 400, "body": json.dumps({
+            "statusCode": 400,
+            "body": json.dumps({
                 "error": "Invalid callback url supplied"
             })
         }

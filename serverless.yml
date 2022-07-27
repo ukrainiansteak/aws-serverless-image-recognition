@@ -30,8 +30,8 @@ functions:
       - http:
           path: blobs
           method: post
-          integration: lambda
-          cors: true
+#          integration: lambda
+#          cors: true
 
   getBlob:
     handler: src.getBlob.handler
@@ -39,8 +39,7 @@ functions:
       - http:
           path: blobs/{blob_id}
           method: get
-          integration: lambda
-          cors: true
+#          cors: true
 
   processBlob:
     handler: src.processBlob.handler
